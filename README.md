@@ -1,11 +1,12 @@
 # Vibing-1: Mobile POI Map
 
-A simple, full-screen mobile Mapbox dark map application for dropping Points of Interest (POIs) and discovering locations.
+A simple, full-screen mobile Mapbox dark map application for dropping Points of Interest (POIs) and discovering intriguing locations in Tel Aviv.
 
 ## Features
 
 ✨ **Full-Screen Dark Map** - Beautiful dark-themed Mapbox map optimized for mobile
 📍 **Drop POIs** - Tap anywhere on the map to add points of interest
+🔍 **Discover Places** - Find unexpected and intriguing locations around your POIs
 🗺️ **Mobile-Optimized** - Responsive design that works great on phones and tablets
 💾 **Persistent Storage** - POIs are saved locally in your browser
 🧭 **Geolocation** - Auto-locate your position on mobile devices
@@ -48,9 +49,27 @@ On first launch, you'll be prompted to enter your Mapbox API key. This is stored
 
 ### Managing POIs
 
-- **View POIs**: Click **🔍 Find Nearby** to see a list of all your POIs
-- **Delete POI**: Click on a marker and press the delete button in the popup
-- **Clear All**: Click **🗑️ Clear POIs** to remove all markers (with confirmation)
+- **Find Nearby**: Click **🔍 Find Nearby** to discover intriguing places around and between your POIs
+  - Automatically searches for cafes, restaurants, bars, museums, galleries, parks, historic sites, and more
+  - Uses OpenStreetMap data via Overpass API
+  - Shows emoji markers for different place types
+  - Expands view to show all discovered locations
+- **Delete POI**: Click on a POI marker and press the delete button in the popup
+- **Clear All**: Click **🗑️ Clear POIs** to remove all POI markers (with confirmation)
+
+### Discovering Intriguing Places
+
+The **Find Nearby** feature searches for unexpected and interesting locations:
+- 🎨 Art galleries and artwork installations
+- 🏛️ Museums and historic sites
+- ☕ Cafes and restaurants with character
+- 🍷 Bars and social venues
+- 🌳 Parks and viewpoints
+- 📚 Libraries, bookshops, and cultural spaces
+- 🎭 Theaters and cinemas
+- 🏪 Local markets and craft shops
+
+Places are marked with emoji icons and clicking on them reveals details.
 
 ### Navigation
 
@@ -65,6 +84,7 @@ On first launch, you'll be prompted to enter your Mapbox API key. This is stored
 ### Technologies
 
 - **Mapbox GL JS v3.0.1** - Interactive map rendering
+- **Overpass API** - OpenStreetMap data for discovering places
 - **Vanilla JavaScript** - No framework dependencies
 - **LocalStorage** - Client-side POI persistence
 - **HTML5 Geolocation API** - User location tracking
@@ -101,11 +121,11 @@ style: 'mapbox://styles/mapbox/dark-v11',  // Current dark theme
 
 ### Changing Default Location
 
-Modify the `DEFAULT_CENTER` constant in `app.js`:
+The map defaults to Tel Aviv. Modify the `DEFAULT_CENTER` constant in `app.js`:
 
 ```javascript
-const DEFAULT_CENTER = [-74.006, 40.7128]; // NYC
-const DEFAULT_ZOOM = 12;
+const DEFAULT_CENTER = [34.7818, 32.0853]; // Tel Aviv
+const DEFAULT_ZOOM = 13;
 ```
 
 ### Styling POI Markers

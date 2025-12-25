@@ -1,8 +1,8 @@
 // Configuration
 const STORAGE_KEY = 'vibing_pois';
 const API_KEY_STORAGE = 'mapbox_api_key';
-const DEFAULT_CENTER = [-74.006, 40.7128]; // NYC
-const DEFAULT_ZOOM = 12;
+const DEFAULT_CENTER = [34.7818, 32.0853]; // Tel Aviv
+const DEFAULT_ZOOM = 13;
 
 // State
 let map;
@@ -103,7 +103,7 @@ function initializeMap(apiKey) {
 function setupEventListeners() {
     document.getElementById('addPoiBtn').addEventListener('click', toggleAddPoiMode);
     document.getElementById('clearPoisBtn').addEventListener('click', clearAllPOIs);
-    document.getElementById('findLocationsBtn').addEventListener('click', showPOIList);
+    document.getElementById('findLocationsBtn').addEventListener('click', findNearbyPlaces);
     document.getElementById('closeListBtn').addEventListener('click', hidePOIList);
     document.getElementById('saveApiKeyBtn').addEventListener('click', saveApiKey);
     
@@ -248,6 +248,187 @@ function clearAllPOIs() {
         
         showNotification('All POIs cleared');
     }
+}
+
+// Find Nearby Places
+async function findNearbyPlaces() {
+    if (pois.length === 0) {
+        showNotification('No POIs yet. Click "Drop POI" and tap on the map!');
+        return;
+    }
+    
+    showNotification('Searching for intriguing places...');
+    
+    try {
+        // Calculate bounding box around all POIs
+        const lats = pois.map(p => p.lat);
+        const lngs = pois.map(p => p.lng);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
+        
+        // Expand bbox slightly for better coverage
+        const padding = 0.01;
+        const bbox = `${minLat - padding},${minLng - padding},${maxLat + padding},${maxLng + padding}`;
+        
+        // Query Overpass API for interesting places
+        // Focus on unexpected, intriguing categories
+        const query = `
+            [out:json][timeout:25];
+            (
+                node["tourism"="artwork"](${bbox});
+                node["historic"](${bbox});
+                node["tourism"="viewpoint"](${bbox});
+                node["leisure"="park"](${bbox});
+                node["amenity"="cafe"](${bbox});
+                node["amenity"="restaurant"](${bbox});
+                node["amenity"="bar"](${bbox});
+                node["shop"="books"](${bbox});
+                node["shop"="music"](${bbox});
+                node["amenity"="library"](${bbox});
+                node["amenity"="theatre"](${bbox});
+                node["amenity"="cinema"](${bbox});
+                node["tourism"="gallery"](${bbox});
+                node["tourism"="museum"](${bbox});
+                node["amenity"="marketplace"](${bbox});
+                node["craft"](${bbox});
+                way["tourism"="artwork"](${bbox});
+                way["historic"](${bbox});
+                way["leisure"="park"](${bbox});
+                way["amenity"="cafe"](${bbox});
+                way["amenity"="restaurant"](${bbox});
+                way["amenity"="bar"](${bbox});
+                way["tourism"="gallery"](${bbox});
+                way["tourism"="museum"](${bbox});
+            );
+            out center 100;
+        `;
+        
+        const response = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: query
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch places');
+        }
+        
+        const data = await response.json();
+        const places = data.elements.filter(el => el.tags && el.tags.name);
+        
+        if (places.length === 0) {
+            showNotification('No interesting places found nearby. Try adding more POIs!');
+            return;
+        }
+        
+        // Clear existing place markers
+        if (window.placeMarkers) {
+            window.placeMarkers.forEach(marker => marker.remove());
+        }
+        window.placeMarkers = [];
+        
+        // Add markers for discovered places
+        places.forEach(place => {
+            const lat = place.lat || place.center.lat;
+            const lng = place.lon || place.center.lon;
+            const name = place.tags.name;
+            const type = getPlaceType(place.tags);
+            const emoji = getPlaceEmoji(place.tags);
+            
+            // Create custom marker for places
+            const el = document.createElement('div');
+            el.className = 'place-marker';
+            el.innerHTML = emoji;
+            el.style.fontSize = '24px';
+            el.style.cursor = 'pointer';
+            el.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))';
+            
+            const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+                <div style="text-align: center; min-width: 150px;">
+                    <div style="font-size: 24px; margin-bottom: 8px;">${emoji}</div>
+                    <h4 style="margin-bottom: 8px;">${name}</h4>
+                    <p style="font-size: 12px; color: #00b4d8; margin-bottom: 4px;">
+                        ${type}
+                    </p>
+                    <p style="font-size: 11px; color: #aaa;">
+                        ${lat.toFixed(5)}, ${lng.toFixed(5)}
+                    </p>
+                </div>
+            `);
+            
+            const marker = new mapboxgl.Marker(el)
+                .setLngLat([lng, lat])
+                .setPopup(popup)
+                .addTo(map);
+            
+            window.placeMarkers.push(marker);
+        });
+        
+        showNotification(`Found ${places.length} intriguing places! 🎉`);
+        
+        // Fit map to show all POIs and discovered places
+        const allCoords = [
+            ...pois.map(p => [p.lng, p.lat]),
+            ...places.map(p => [p.lon || p.center.lon, p.lat || p.center.lat])
+        ];
+        const bounds = allCoords.reduce((bounds, coord) => {
+            return bounds.extend(coord);
+        }, new mapboxgl.LngLatBounds(allCoords[0], allCoords[0]));
+        
+        map.fitBounds(bounds, {
+            padding: 50,
+            maxZoom: 15
+        });
+        
+    } catch (error) {
+        console.error('Error finding places:', error);
+        showNotification('Error finding places. Please try again.');
+    }
+}
+
+function getPlaceType(tags) {
+    if (tags.tourism) return tags.tourism.replace('_', ' ');
+    if (tags.historic) return `historic ${tags.historic}`;
+    if (tags.amenity) return tags.amenity;
+    if (tags.leisure) return tags.leisure;
+    if (tags.shop) return `${tags.shop} shop`;
+    if (tags.craft) return tags.craft;
+    return 'interesting place';
+}
+
+function getPlaceEmoji(tags) {
+    // Tourism
+    if (tags.tourism === 'artwork') return '🎨';
+    if (tags.tourism === 'viewpoint') return '👁️';
+    if (tags.tourism === 'gallery') return '🖼️';
+    if (tags.tourism === 'museum') return '🏛️';
+    
+    // Historic
+    if (tags.historic) return '🏛️';
+    
+    // Leisure
+    if (tags.leisure === 'park') return '🌳';
+    
+    // Food & Drink
+    if (tags.amenity === 'cafe') return '☕';
+    if (tags.amenity === 'restaurant') return '🍽️';
+    if (tags.amenity === 'bar') return '🍷';
+    
+    // Culture
+    if (tags.amenity === 'library') return '📚';
+    if (tags.amenity === 'theatre') return '🎭';
+    if (tags.amenity === 'cinema') return '🎬';
+    
+    // Shopping
+    if (tags.shop === 'books') return '📖';
+    if (tags.shop === 'music') return '🎵';
+    if (tags.amenity === 'marketplace') return '🏪';
+    
+    // Craft
+    if (tags.craft) return '🛠️';
+    
+    return '📍';
 }
 
 // POI List UI
