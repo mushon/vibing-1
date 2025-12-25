@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vibing POI Map</title>
+    
+    <!-- Mapbox GL JS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div id="controls">
+        <button id="addPoiBtn" class="control-btn">📍 Drop POI</button>
+        <button id="clearPoisBtn" class="control-btn">🗑️ Clear POIs</button>
+        <button id="findLocationsBtn" class="control-btn">🔍 Find Nearby</button>
+    </div>
+    
+    <div id="poiList" class="hidden">
+        <h3>Your POIs</h3>
+        <div id="poiListContent"></div>
+        <button id="closeListBtn" class="close-btn">Close</button>
+    </div>
+    
+    <div id="apiKeyPrompt" class="hidden">
+        <div class="prompt-content">
+            <h3>Mapbox API Key Required</h3>
+            <p>Please enter your Mapbox access token:</p>
+            <input type="text" id="apiKeyInput" placeholder="pk.eyJ...">
+            <button id="saveApiKeyBtn">Save</button>
+            <p class="help-text">Get your free token at <a href="https://www.mapbox.com" target="_blank">mapbox.com</a></p>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
