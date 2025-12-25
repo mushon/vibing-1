@@ -312,40 +312,14 @@ function loadPOIs() {
 function showNotification(message) {
     // Create temporary notification
     const notification = document.createElement('div');
+    notification.className = 'notification slide-down';
     notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 180, 216, 0.9);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 20px;
-        z-index: 5000;
-        font-size: 14px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        animation: slideDown 0.3s ease;
-    `;
     
     document.body.appendChild(notification);
     
     setTimeout(() => {
-        notification.style.animation = 'slideUp 0.3s ease';
+        notification.classList.remove('slide-down');
+        notification.classList.add('slide-up');
         setTimeout(() => notification.remove(), 300);
     }, 2000);
 }
-
-// Add animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideDown {
-        from { transform: translate(-50%, -100%); opacity: 0; }
-        to { transform: translate(-50%, 0); opacity: 1; }
-    }
-    @keyframes slideUp {
-        from { transform: translate(-50%, 0); opacity: 1; }
-        to { transform: translate(-50%, -100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);
