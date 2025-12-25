@@ -315,7 +315,7 @@ async function findNearbyPlaces() {
         }
         
         const data = await response.json();
-        const places = data.elements.filter(el => el.tags && el.tags.name);
+        const places = data.elements.filter(el => el.tags && el.tags.name && el.tags.name.trim());
         
         if (places.length === 0) {
             showNotification('No interesting places found nearby. Try adding more POIs!');
@@ -330,8 +330,12 @@ async function findNearbyPlaces() {
         
         // Add markers for discovered places
         places.forEach(place => {
-            const lat = place.lat || place.center.lat;
-            const lng = place.lon || place.center.lon;
+            const lat = place.lat || (place.center && place.center.lat);
+            const lng = place.lon || (place.center && place.center.lon);
+            
+            // Skip if we don't have valid coordinates
+            if (!lat || !lng) return;
+            
             const name = place.tags.name;
             const type = getPlaceType(place.tags);
             const emoji = getPlaceEmoji(place.tags);
@@ -370,7 +374,11 @@ async function findNearbyPlaces() {
         // Fit map to show all POIs and discovered places
         const allCoords = [
             ...pois.map(p => [p.lng, p.lat]),
-            ...places.map(p => [p.lon || p.center.lon, p.lat || p.center.lat])
+            ...places.map(p => {
+                const lng = p.lon || (p.center && p.center.lon);
+                const lat = p.lat || (p.center && p.center.lat);
+                return [lng, lat];
+            }).filter(coord => coord[0] && coord[1])
         ];
         const bounds = allCoords.reduce((bounds, coord) => {
             return bounds.extend(coord);
